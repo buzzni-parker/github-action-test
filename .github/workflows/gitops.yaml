@@ -53,11 +53,11 @@ jobs:
       run: cat gitops-test/test-dir/test.yaml
 
     - name: merge branch
-      uses: broadinstitute/datarepo-actions/actions/merger@0.59.0
+      uses: broadinstitute/datarepo-actions/actions/merger@0.61.0
       env:
         COMMIT_MESSAGE: "change deployment yaml: ${{ steps.build.outputs.tag }}"
         GITHUB_REPO: gitops-test
         SWITCH_DIRECTORIES: true
         MERGE_BRANCH: main
         GITHUB_USER_NAME: ${{ github.actor }}
-        GITHUB_USER_EMAIL: ""
+        GITHUB_USER_EMAIL: "${{ github.actor }}@users.noreply.github.com"
