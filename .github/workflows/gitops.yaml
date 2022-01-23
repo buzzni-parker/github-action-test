@@ -24,7 +24,7 @@ jobs:
         IMAGE_NAME=${GCR_REGISTRY}/${APP_NAME}
         TAG=${BRANCH_NAME}.${VERSION}
         LATEST_TAG=${BRANCH_NAME}.latest
-        echo "::set-output name=tag::$TAG"
+        echo "::set-output name=image::$IMAGE_NAME:$TAG"
       env:
         APP_NAME: ${{ github.event.repository.name }}
         VERSION: ${{ steps.version.outputs.version }}
@@ -45,9 +45,9 @@ jobs:
     - name: change deployment yaml
       uses: mikefarah/yq@v4.17.2
       with:
-        cmd: yq eval -i '.xmas-fifth-day.turtle-doves = "github/action:$TAG"' 'gitops-test/test-dir/test.yaml'
+        cmd: yq eval -i '.xmas-fifth-day.turtle-doves = env(IMAGE)' 'gitops-test/test-dir/test.yaml'
       env:
-        TAG: "${{ steps.build.outputs.tag }}"
+        IMAGE: "${{ steps.build.outputs.image }}"
 
     - name: cat yaml
       run: cat gitops-test/test-dir/test.yaml
@@ -59,3 +59,5 @@ jobs:
         GITHUB_REPO: gitops-test
         SWITCH_DIRECTORIES: true
         MERGE_BRANCH: main
+        GITHUB_USER_NAME: ${{ github.actor }}
+        GITHUB_USER_EMAIL: ""
