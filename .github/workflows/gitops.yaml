@@ -1,4 +1,5 @@
-name: Docker Image CI
+name: Github Action CI/CD
+
 on:
   push:
     branches:
@@ -6,58 +7,61 @@ on:
     paths:
       - '.github/**'
       - 'pyproject.toml'
+
 jobs:
   build:
     runs-on: ubuntu-20.04
     steps:
+    - name: set values
+      id: value
+      run: | 
+        IMAGE_NAME=${GCR_REGISTRY}/${APP_NAME}
+        VERSION=$(sed -rn '/^version\s*=\s*\"([^\"]+)\"/{s//\1/p; q}' ./pyproject.toml)
+        BRANCH_NAME=${GITHUB_REF##*/}
+        TAG=${BRANCH_NAME}.${VERSION}
+        LATEST_TAG=${BRANCH_NAME}.latest
+
+        echo "::set-output name=image::$IMAGE_NAME:$TAG"
+        echo "::set-output name=latest-image::$IMAGE_NAME:$TAG"
+        echo "::set-output name=gitops-name::gitops-test"
+        echo "::set-output name=gitops-repo::$GITHUB_REPOSITORY_OWNER/gitops-test"
+
     - name: checkout git
       uses: actions/checkout@v2
 
-    - name: get current version
-      id: version
-      run: echo "::set-output name=version::$(sed -rn '/^version\s*=\s*\"([^\"]+)\"/{s//\1/p; q}' ./pyproject.toml)"
- 
-    - name: build & push docker image
-      id: build
-      run: |
-        BRANCH_NAME=${GITHUB_REF##*/}
-        IMAGE_NAME=${GCR_REGISTRY}/${APP_NAME}
-        TAG=${BRANCH_NAME}.${VERSION}
-        LATEST_TAG=${BRANCH_NAME}.latest
-        echo "::set-output name=image::$IMAGE_NAME:$TAG"
-      env:
-        APP_NAME: ${{ github.event.repository.name }}
-        VERSION: ${{ steps.version.outputs.version }}
+    - uses: webfactory/ssh-agent@v0.4.1
+      with:
+        ssh-private-key: |
+          ${{ secrets.SSH_PRIVATE_KEY }}
 
     - name: checkout gitops repo
       uses: actions/checkout@v2
       with:
-        repository: buzzni-parker/gitops-test
-        path: gitops-test
+        repository: ${{ steps.value.outputs.gitops-repo }}
+        path: ${{ steps.value.outputs.gitops-name }}
         token: ${{ secrets.TOKEN }}
-
-    - name: file list
-      run: ls
-
-    - name: env list
-      run: export
 
     - name: change deployment yaml
       uses: mikefarah/yq@v4.17.2
       with:
-        cmd: yq eval -i '.xmas-fifth-day.turtle-doves = env(IMAGE)' 'gitops-test/test-dir/test.yaml'
+        cmd: yq eval -i '.xmas-fifth-day.turtle-doves = env(IMAGE)' ${GITHUB_REPO}/test-dir/test.yaml
       env:
-        IMAGE: "${{ steps.build.outputs.image }}"
+        GITHUB_REPO: ${{ steps.value.outputs.gitops-name }}
+        IMAGE: ${{ steps.value.outputs.image }}
 
-    - name: cat yaml
-      run: cat gitops-test/test-dir/test.yaml
+    - name: merge commit
+      run: |
+        cd "${GITHUB_WORKSPACE}"/"${GITHUB_REPO}"
 
-    - name: merge branch
-      uses: broadinstitute/datarepo-actions/actions/merger@0.61.0
+        git config user.name "${GITHUB_ACTOR}"
+        git config user.email "${GITHUB_ACTOR}@users.noreply.github.com"
+        git config pull.rebase false
+        git pull
+        git add .
+        git commit -m "${COMMIT_MESSAGE}"
+        git push
+        git rev-parse HEAD        
       env:
-        COMMIT_MESSAGE: "${{ github.event.head_commit.message }}"
-        GITHUB_REPO: gitops-test
-        SWITCH_DIRECTORIES: true
-        MERGE_BRANCH: main
-        GITHUB_USER_NAME: ${{ github.actor }}
-        GITHUB_USER_EMAIL: "${{ github.actor }}@users.noreply.github.com"
+        COMMIT_MESSAGE: ${{ github.event.head_commit.message }}
+        GITHUB_ACTOR: ${{ github.actor }}
+        GITHUB_REPO: ${{ steps.value.outputs.gitops-name }}
