@@ -12,6 +12,9 @@ jobs:
   build:
     runs-on: ubuntu-20.04
     steps:
+    - name: checkout git
+      uses: actions/checkout@v2
+
     - name: set values
       id: value
       run: | 
@@ -25,9 +28,6 @@ jobs:
         echo "::set-output name=latest-image::$IMAGE_NAME:$TAG"
         echo "::set-output name=gitops-name::gitops-test"
         echo "::set-output name=gitops-repo::$GITHUB_REPOSITORY_OWNER/gitops-test"
-
-    - name: checkout git
-      uses: actions/checkout@v2
 
     - uses: webfactory/ssh-agent@v0.4.1
       with:
