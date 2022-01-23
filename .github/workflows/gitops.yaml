@@ -33,16 +33,16 @@ jobs:
       uses: actions/checkout@v2
       with:
         repository: buzzni-parker/gitops-test
-        path: test-dir
+        path: gitops-test
 
     - name: file list
       run: |
         ls
-        
+
     - name: change deployment yaml
       uses: mikefarah/yq@v4.17.2
       with:
-        cmd: yq eval -i '.xmas-fifth-day.turtle-doves = "github/action:$TAG"' 'test.yaml'
+        cmd: yq eval -i '.xmas-fifth-day.turtle-doves = "github/action:$TAG"' 'gitops-test/test-dir/test.yaml'
 
     - name: merge branch
       uses: broadinstitute/datarepo-actions/actions/merger@0.59.0
