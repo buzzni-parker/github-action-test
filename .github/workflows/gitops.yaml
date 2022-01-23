@@ -1,0 +1,49 @@
+name: Docker Image CI
+on:
+  push:
+    branches:
+      - develop
+      - master
+    paths:
+      - 'pyproject.toml'
+env:
+  APP_NAME: ${{ github.event.repository.name }}
+  BRANCH_NAME: ${GITHUB_REF##*/}
+
+jobs:
+  build:
+    runs-on: ubuntu-20.04
+    steps:
+    - name: checkout git
+      uses: actions/checkout@v2
+
+    - name: get current version
+      id: version
+      run: echo "::set-output name=version::$(sed -rn '/^version\s*=\s*\"([^\"]+)\"/{s//\1/p; q}' ./pyproject.toml)"
+ 
+    - name: build & push docker image
+      run: |
+        IMAGE_NAME=${GCR_REGISTRY}/${APP_NAME}
+        TAG=${BRANCH_NAME}.${VERSION}
+        LATEST_TAG=${BRANCH_NAME}.latest
+      env:
+        VERSION: ${{ steps.version.outputs.version }}
+
+    - name: checkout gitops repo
+      uses: actions/checkout@v2
+      with:
+        repository: buzzni-parker/gitops-test
+        path: test-dir
+        
+    - name: change deployment yaml
+      uses: mikefarah/yq@v4.17.2
+      with:
+        cmd: yq eval -i '.xmas-fifth-day.turtle-doves = "github action"' 'test.yaml'
+
+    - name: merge branch
+      uses: broadinstitute/datarepo-actions/actions/merger@0.59.0
+      env:
+        COMMIT_MESSAGE: "change deployment yaml: ${GITHUB_REF##*/}.${{ steps.version.outputs.version }}"
+        GITHUB_REPO: gitops-test
+        SWITCH_DIRECTORIES: true
+        MERGE_BRANCH: main
