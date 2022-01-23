@@ -6,10 +6,6 @@ on:
     paths:
       - '.github/**'
       - 'pyproject.toml'
-env:
-  APP_NAME: ${{ github.event.repository.name }}
-  BRANCH_NAME: ${GITHUB_REF##*/}
-
 jobs:
   build:
     runs-on: ubuntu-20.04
@@ -24,11 +20,13 @@ jobs:
     - name: build & push docker image
       id: build
       run: |
+        BRANCH_NAME=${GITHUB_REF##*/}
         IMAGE_NAME=${GCR_REGISTRY}/${APP_NAME}
         TAG=${BRANCH_NAME}.${VERSION}
         LATEST_TAG=${BRANCH_NAME}.latest
         echo "::set-output name=tag::$TAG"
       env:
+        APP_NAME: ${{ github.event.repository.name }}
         VERSION: ${{ steps.version.outputs.version }}
 
     - name: checkout gitops repo
@@ -37,9 +35,13 @@ jobs:
         repository: buzzni-parker/gitops-test
         path: gitops-test
         ssh-key: ${{ secrets.SSH_PRIVATE_KEY }}
+        ssh-strict: false
 
     - name: file list
       run: ls
+
+    - name: env list
+      run: export
 
     - name: change deployment yaml
       uses: mikefarah/yq@v4.17.2
