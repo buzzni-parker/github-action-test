@@ -37,7 +37,7 @@ jobs:
     - name: change deployment yaml
       uses: mikefarah/yq@v4.17.2
       with:
-        cmd: yq eval -i '.xmas-fifth-day.turtle-doves = "github action"' 'test.yaml'
+        cmd: yq eval -i '.xmas-fifth-day.turtle-doves = "github action"' './test-dir/test.yaml'
 
     - name: merge branch
       uses: broadinstitute/datarepo-actions/actions/merger@0.59.0
