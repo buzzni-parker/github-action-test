@@ -28,6 +28,9 @@ jobs:
         echo "::set-output name=latest-image::$IMAGE_NAME:$TAG"
         echo "::set-output name=gitops-name::gitops-test"
         echo "::set-output name=gitops-repo::$GITHUB_REPOSITORY_OWNER/gitops-test"
+      env:
+        GCR_REGISTRY: asia.gcr.io/storage-273502
+        APP_NAME: ${{ github.event.repository.name }}
 
     - uses: webfactory/ssh-agent@v0.4.1
       with:
