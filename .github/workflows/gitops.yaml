@@ -29,6 +29,11 @@ jobs:
       env:
         VERSION: ${{ steps.version.outputs.version }}
 
+    - uses: webfactory/ssh-agent@v0.4.1
+      with:
+        ssh-private-key: |
+          ${{ secrets.SSH_PRIVATE_KEY }}
+
     - name: checkout gitops repo
       uses: actions/checkout@v2
       with:
