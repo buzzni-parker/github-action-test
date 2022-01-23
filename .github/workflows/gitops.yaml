@@ -22,27 +22,24 @@ jobs:
       run: echo "::set-output name=version::$(sed -rn '/^version\s*=\s*\"([^\"]+)\"/{s//\1/p; q}' ./pyproject.toml)"
  
     - name: build & push docker image
+      id: build
       run: |
         IMAGE_NAME=${GCR_REGISTRY}/${APP_NAME}
         TAG=${BRANCH_NAME}.${VERSION}
         LATEST_TAG=${BRANCH_NAME}.latest
+        echo "::set-output name=tag::$TAG"
       env:
         VERSION: ${{ steps.version.outputs.version }}
-
-    - uses: webfactory/ssh-agent@v0.4.1
-      with:
-        ssh-private-key: |
-          ${{ secrets.SSH_PRIVATE_KEY }}
 
     - name: checkout gitops repo
       uses: actions/checkout@v2
       with:
         repository: buzzni-parker/gitops-test
         path: gitops-test
+        ssh-key: ${{ secrets.SSH_PRIVATE_KEY }}
 
     - name: file list
-      run: |
-        ls
+      run: ls
 
     - name: change deployment yaml
       uses: mikefarah/yq@v4.17.2
@@ -52,7 +49,7 @@ jobs:
     - name: merge branch
       uses: broadinstitute/datarepo-actions/actions/merger@0.59.0
       env:
-        COMMIT_MESSAGE: "change deployment yaml: ${GITHUB_REF##*/}.${{ steps.version.outputs.version }}"
+        COMMIT_MESSAGE: "change deployment yaml: ${{ steps.build.outputs.tag }}.${{ steps.version.outputs.version }}"
         GITHUB_REPO: gitops-test
         SWITCH_DIRECTORIES: true
         MERGE_BRANCH: main
