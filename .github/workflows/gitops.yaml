@@ -34,8 +34,7 @@ jobs:
       with:
         repository: buzzni-parker/gitops-test
         path: gitops-test
-        ssh-key: ${{ secrets.SSH_PRIVATE_KEY }}
-        ssh-strict: false
+        token: ${{ secrets.TOKEN }}
 
     - name: file list
       run: ls
@@ -47,11 +46,16 @@ jobs:
       uses: mikefarah/yq@v4.17.2
       with:
         cmd: yq eval -i '.xmas-fifth-day.turtle-doves = "github/action:$TAG"' 'gitops-test/test-dir/test.yaml'
+      env:
+        TAG: "${{ steps.build.outputs.tag }}"
+
+    - name: cat yaml
+      run: cat gitops-test/test-dir/test.yaml
 
     - name: merge branch
       uses: broadinstitute/datarepo-actions/actions/merger@0.59.0
       env:
-        COMMIT_MESSAGE: "change deployment yaml: ${{ steps.build.outputs.tag }}.${{ steps.version.outputs.version }}"
+        COMMIT_MESSAGE: "change deployment yaml: ${{ steps.build.outputs.tag }}"
         GITHUB_REPO: gitops-test
         SWITCH_DIRECTORIES: true
         MERGE_BRANCH: main
