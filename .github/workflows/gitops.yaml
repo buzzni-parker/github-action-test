@@ -53,7 +53,7 @@ jobs:
       run: cat gitops-test/test-dir/test.yaml
 
     - name: merge branch
-      uses: broadinstitute/datarepo-actions/actions/merger
+      uses: broadinstitute/datarepo-actions/actions/merger@0.59.0
       env:
         COMMIT_MESSAGE: "change deployment yaml: ${{ steps.build.outputs.tag }}"
         GITHUB_REPO: gitops-test
