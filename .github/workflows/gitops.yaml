@@ -2,11 +2,8 @@ name: Github Action CI/CD
 
 on:
   push:
-    branches:
-      - main
-    paths:
-      - '.github/**'
-      - 'pyproject.toml'
+    tags:        
+      - v**
 
 jobs:
   build:
@@ -19,13 +16,13 @@ jobs:
       id: value
       run: | 
         IMAGE_NAME=${GCR_REGISTRY}/${APP_NAME}
-        VERSION=$(sed -rn '/^version\s*=\s*\"([^\"]+)\"/{s//\1/p; q}' ./pyproject.toml)
+        VERSION=${GITHUB_REF/refs\/tags\//}
         BRANCH_NAME=${GITHUB_REF##*/}
         TAG=${BRANCH_NAME}.${VERSION}
         LATEST_TAG=${BRANCH_NAME}.latest
 
         echo "::set-output name=image::$IMAGE_NAME:$TAG"
-        echo "::set-output name=latest-image::$IMAGE_NAME:$TAG"
+        echo "::set-output name=latest-image::$IMAGE_NAME:$LATEST_TAG"
         echo "::set-output name=gitops-name::gitops-test"
         echo "::set-output name=gitops-repo::$GITHUB_REPOSITORY_OWNER/gitops-test"
       env:
