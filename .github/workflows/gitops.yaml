@@ -3,7 +3,7 @@ name: Github Action CI/CD
 on:
   push:
     tags:        
-      - **
+      - '**'
 
 jobs:
   build:
